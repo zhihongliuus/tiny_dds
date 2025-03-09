@@ -11,6 +11,7 @@
 #include "absl/synchronization/mutex.h"
 
 #include "include/tiny_dds/domain_participant.h"
+#include "include/tiny_dds/transport_types.h"
 
 namespace tiny_dds {
 namespace core {
@@ -70,7 +71,22 @@ public:
      * @brief Gets the name of this participant.
      * @return The participant name.
      */
-    std::string GetName() const override;
+    const std::string& GetName() const override;
+    
+    /**
+     * @brief Sets the transport type for this participant.
+     * 
+     * @param transport_type The transport type to use.
+     * @return true if the transport type was set successfully, false otherwise.
+     */
+    bool SetTransportType(TransportType transport_type) override;
+    
+    /**
+     * @brief Gets the transport type for this participant.
+     * 
+     * @return The transport type.
+     */
+    TransportType GetTransportType() const override;
 
 private:
     // Domain ID for this participant
@@ -78,6 +94,9 @@ private:
 
     // Name of this participant
     std::string participant_name_;
+    
+    // Transport type for this participant
+    TransportType transport_type_;
 
     // Mutex for thread safety
     mutable absl::Mutex mutex_;

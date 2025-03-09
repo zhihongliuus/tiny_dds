@@ -18,7 +18,8 @@ DomainParticipantImpl::DomainParticipantImpl(
     DomainId domain_id, 
     const std::string& participant_name)
     : domain_id_(domain_id),
-      participant_name_(participant_name) {
+      participant_name_(participant_name),
+      transport_type_(TransportType::UDP) {
     // Initialize any resources needed for the domain participant
 }
 
@@ -75,8 +76,26 @@ DomainId DomainParticipantImpl::GetDomainId() const {
     return domain_id_;
 }
 
-std::string DomainParticipantImpl::GetName() const {
+const std::string& DomainParticipantImpl::GetName() const {
     return participant_name_;
+}
+
+bool DomainParticipantImpl::SetTransportType(TransportType transport_type) {
+    absl::MutexLock lock(&mutex_);
+    
+    // Check if we already have publishers or subscribers
+    if (!publishers_.empty() || !subscribers_.empty()) {
+        // Cannot change transport type after creating publishers or subscribers
+        return false;
+    }
+    
+    transport_type_ = transport_type;
+    return true;
+}
+
+TransportType DomainParticipantImpl::GetTransportType() const {
+    absl::MutexLock lock(&mutex_);
+    return transport_type_;
 }
 
 } // namespace core

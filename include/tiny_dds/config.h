@@ -1,22 +1,39 @@
 #ifndef TINY_DDS_CONFIG_H_
 #define TINY_DDS_CONFIG_H_
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "include/tiny_dds/transport_types.h"
+#include "include/tiny_dds/types.h"
+#include "yaml-cpp/yaml.h"
 
 namespace tiny_dds {
 namespace config {
 
 /**
- * @brief Configuration for QoS (Quality of Service) settings.
+ * @brief Quality of Service configuration for DDS entities.
  */
 struct QosConfig {
-    std::string reliability = "BEST_EFFORT";  // BEST_EFFORT or RELIABLE
-    std::string durability = "VOLATILE";      // VOLATILE, TRANSIENT_LOCAL, TRANSIENT, or PERSISTENT
+    ReliabilityKind reliability = ReliabilityKind::BEST_EFFORT;
+    DurabilityKind durability = DurabilityKind::VOLATILE;
+    // Other QoS settings can be added here
+};
+
+/**
+ * @brief Transport configuration for DDS entities.
+ */
+struct TransportConfig {
+    TransportType type = TransportType::UDP;
     
-    // Additional QoS parameters can be added here
+    // Shared memory specific configuration
+    size_t buffer_size = 1024 * 1024;  // 1MB default
+    size_t max_message_size = 64 * 1024;  // 64KB default
+    
+    // UDP specific configuration (can be expanded as needed)
+    std::string address = "127.0.0.1";
+    int port = 0;  // 0 means auto-assign
 };
 
 /**
@@ -24,7 +41,7 @@ struct QosConfig {
  */
 struct TopicConfig {
     std::string name;
-    std::string type;
+    std::string type_name;
     QosConfig qos;
 };
 
@@ -34,7 +51,8 @@ struct TopicConfig {
 struct PublisherConfig {
     std::string name;
     QosConfig qos;
-    std::vector<TopicConfig> topics;
+    TransportConfig transport;
+    std::vector<std::string> topic_names;  // Names of associated topics
 };
 
 /**
@@ -43,15 +61,17 @@ struct PublisherConfig {
 struct SubscriberConfig {
     std::string name;
     QosConfig qos;
-    std::vector<TopicConfig> topics;
+    TransportConfig transport;
+    std::vector<std::string> topic_names;  // Names of associated topics
 };
 
 /**
- * @brief Configuration for a DomainParticipant.
+ * @brief Configuration for a Domain Participant.
  */
 struct DomainParticipantConfig {
     std::string name;
-    uint32_t domain_id;
+    DomainId domain_id;
+    std::vector<TopicConfig> topics;
     std::vector<PublisherConfig> publishers;
     std::vector<SubscriberConfig> subscribers;
 };
@@ -64,28 +84,39 @@ struct Config {
 };
 
 /**
- * @brief Loads a configuration from a YAML file.
+ * @brief Loads configuration from a YAML node.
  * 
- * @param file_path Path to the YAML configuration file.
- * @return The loaded configuration, or nullptr if loading failed.
+ * @param node The YAML node.
+ * @param config The config to populate.
+ * @return True if loading was successful, false otherwise.
  */
-std::shared_ptr<Config> LoadFromFile(const std::string& file_path);
+bool LoadFromYamlNode(const YAML::Node& node, Config& config);
 
 /**
- * @brief Loads a configuration from a YAML string.
+ * @brief Loads configuration from a YAML file.
  * 
- * @param yaml_str YAML configuration string.
- * @return The loaded configuration, or nullptr if loading failed.
+ * @param file_path Path to the YAML file.
+ * @param config The config to populate.
+ * @return True if loading was successful, false otherwise.
  */
-std::shared_ptr<Config> LoadFromString(const std::string& yaml_str);
+bool LoadFromYamlFile(const std::string& file_path, Config& config);
+
+/**
+ * @brief Loads configuration from a YAML string.
+ * 
+ * @param yaml_string The YAML content as a string.
+ * @param config The config to populate.
+ * @return True if loading was successful, false otherwise.
+ */
+bool LoadFromYamlString(const std::string& yaml_string, Config& config);
 
 /**
  * @brief Validates a configuration.
  * 
  * @param config The configuration to validate.
- * @return true if the configuration is valid, false otherwise.
+ * @return True if the configuration is valid, false otherwise.
  */
-bool Validate(const Config& config);
+bool ValidateConfig(const Config& config);
 
 } // namespace config
 } // namespace tiny_dds

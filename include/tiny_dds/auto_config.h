@@ -15,6 +15,28 @@
 namespace tiny_dds {
 namespace auto_config {
 
+// Define a composite key for entity maps
+struct EntityKey {
+    std::string participant_name;
+    std::string entity_name;
+    
+    EntityKey(const std::string& p_name, const std::string& e_name)
+        : participant_name(p_name), entity_name(e_name) {}
+    
+    bool operator==(const EntityKey& other) const {
+        return participant_name == other.participant_name && 
+               entity_name == other.entity_name;
+    }
+};
+
+// Hash function for EntityKey
+struct EntityKeyHash {
+    std::size_t operator()(const EntityKey& key) const {
+        return std::hash<std::string>()(key.participant_name) ^ 
+               std::hash<std::string>()(key.entity_name);
+    }
+};
+
 /**
  * @brief A class that manages DDS entities created from a configuration.
  */
@@ -108,9 +130,9 @@ private:
     
     // Maps to store created entities
     std::unordered_map<std::string, std::shared_ptr<DomainParticipant>> participants_;
-    std::unordered_map<std::string, std::shared_ptr<Publisher>> publishers_;
-    std::unordered_map<std::string, std::shared_ptr<Subscriber>> subscribers_;
-    std::unordered_map<std::string, std::shared_ptr<Topic>> topics_;
+    std::unordered_map<EntityKey, std::shared_ptr<Publisher>, EntityKeyHash> publishers_;
+    std::unordered_map<EntityKey, std::shared_ptr<Subscriber>, EntityKeyHash> subscribers_;
+    std::unordered_map<EntityKey, std::shared_ptr<Topic>, EntityKeyHash> topics_;
 };
 
 } // namespace auto_config

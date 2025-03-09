@@ -61,6 +61,12 @@ public:
      * @param callback The callback function.
      */
     void SetDataReceivedCallback(tiny_dds::DataReaderCallback callback) override;
+    
+    /**
+     * @brief Sets a callback function to be called when data is received, including domain and topic information.
+     * @param callback The callback function.
+     */
+    void SetDataCallback(tiny_dds::DataCallback callback) override;
 
     /**
      * @brief Gets the topic associated with this DataReader.
@@ -103,6 +109,9 @@ private:
 
     // Callback function for data reception
     tiny_dds::DataReaderCallback data_received_callback_;
+    
+    // Callback function for data reception with domain and topic information
+    tiny_dds::DataCallback data_callback_;
 
     // Subscription matched status
     tiny_dds::SubscriptionMatchedStatus subscription_matched_status_;

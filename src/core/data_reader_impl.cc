@@ -19,78 +19,66 @@ DataReaderImpl::DataReaderImpl(
       data_received_callback_(nullptr) {
     // Initialize any resources needed for the data reader
     
-    // Register with the transport manager
-    transport::TransportManager::GetInstance().RegisterSubscriber(
+    // Get the transport manager
+    auto transport_manager = transport::TransportManager::Create();
+    
+    // Create the transport for this topic
+    transport_manager->CreateTransport(
+        subscriber_->GetParticipant()->GetDomainId(),
+        subscriber_->GetParticipant()->GetName(),
+        topic_->GetName(),
+        1024 * 1024,  // 1MB buffer size
+        64 * 1024,    // 64KB max message size
+        subscriber_->GetParticipant()->GetTransportType());
+    
+    // Subscribe to the topic
+    transport_manager->Subscribe(
         subscriber_->GetParticipant()->GetDomainId(),
         topic_->GetName(),
-        topic_->GetTypeName(),
-        [this](DomainId domain_id, const std::string& topic_name, const void* data, size_t size) {
-            // Forward the data to our OnDataReceived method
-            this->OnDataReceived(data, size);
-        });
+        subscriber_->GetParticipant()->GetTransportType());
 }
 
 DataReaderImpl::~DataReaderImpl() {
     // Clean up resources
-    
-    // Unregister from the transport manager
-    transport::TransportManager::GetInstance().UnregisterSubscriber(
-        subscriber_->GetParticipant()->GetDomainId(),
-        topic_->GetName());
 }
 
 int32_t DataReaderImpl::Read(void* buffer, size_t buffer_size, SampleInfo& info) {
     absl::MutexLock lock(&mutex_);
     
-    if (samples_.empty()) {
-        return -1;  // No data available
+    // Get the transport manager
+    auto transport_manager = transport::TransportManager::Create();
+    
+    // Use the transport manager to receive data
+    size_t bytes_received = 0;
+    bool result = transport_manager->Receive(
+        subscriber_->GetParticipant()->GetDomainId(),
+        topic_->GetName(),
+        buffer,
+        buffer_size,
+        &bytes_received,
+        subscriber_->GetParticipant()->GetTransportType());
+    
+    if (result) {
+        // Update sample info
+        info.valid_data = true;
     }
     
-    const DataSample& sample = samples_.front();
-    
-    // Check if buffer is large enough
-    if (buffer_size < sample.data.size()) {
-        return -1;  // Buffer too small
-    }
-    
-    // Copy data to buffer
-    std::memcpy(buffer, sample.data.data(), sample.data.size());
-    
-    // Copy sample info
-    info = sample.info;
-    
-    return static_cast<int32_t>(sample.data.size());
+    return result ? static_cast<int32_t>(bytes_received) : -1;
 }
 
 int32_t DataReaderImpl::Take(void* buffer, size_t buffer_size, SampleInfo& info) {
-    absl::MutexLock lock(&mutex_);
-    
-    if (samples_.empty()) {
-        return -1;  // No data available
-    }
-    
-    const DataSample& sample = samples_.front();
-    
-    // Check if buffer is large enough
-    if (buffer_size < sample.data.size()) {
-        return -1;  // Buffer too small
-    }
-    
-    // Copy data to buffer
-    std::memcpy(buffer, sample.data.data(), sample.data.size());
-    
-    // Copy sample info
-    info = sample.info;
-    
-    // Remove the sample from the queue
-    samples_.pop_front();
-    
-    return static_cast<int32_t>(sample.data.size());
+    // For now, Take is the same as Read
+    return Read(buffer, buffer_size, info);
 }
 
-void DataReaderImpl::SetDataReceivedCallback(DataReaderCallback callback) {
+void DataReaderImpl::SetDataReceivedCallback(tiny_dds::DataReaderCallback callback) {
     absl::MutexLock lock(&mutex_);
     data_received_callback_ = callback;
+}
+
+void DataReaderImpl::SetDataCallback(tiny_dds::DataCallback callback) {
+    absl::MutexLock lock(&mutex_);
+    data_callback_ = callback;
 }
 
 std::shared_ptr<Topic> DataReaderImpl::GetTopic() const {
@@ -106,41 +94,6 @@ SubscriptionMatchedStatus DataReaderImpl::GetSubscriptionMatchedStatus() const {
 std::shared_ptr<SubscriberImpl> DataReaderImpl::GetSubscriber() const {
     absl::MutexLock lock(&mutex_);
     return subscriber_;
-}
-
-void DataReaderImpl::OnDataReceived(const void* data, size_t size) {
-    // Create a new data sample
-    DataSample sample;
-    sample.data.resize(size);
-    std::memcpy(sample.data.data(), data, size);
-    
-    // Set sample info
-    sample.info.valid_data = true;
-    
-    // Make a copy of the callback to avoid holding the lock during the callback
-    DataReaderCallback callback_copy;
-    
-    {
-        absl::MutexLock lock(&mutex_);
-        
-        // Add to queue
-        samples_.push_back(std::move(sample));
-        
-        // Only notify if this is the first sample
-        if (samples_.size() == 1) {
-            data_available_.Notify();
-        }
-        
-        // Copy the callback if set
-        if (data_received_callback_) {
-            callback_copy = data_received_callback_;
-        }
-    }
-    
-    // Call callback if set
-    if (callback_copy) {
-        callback_copy(data, size, sample.info);
-    }
 }
 
 } // namespace core

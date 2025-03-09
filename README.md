@@ -1,144 +1,180 @@
 # Tiny DDS
 
-A lightweight, high-performance Data Distribution Service (DDS) implementation in C++.
-
-## Overview
-
-Tiny DDS is a from-scratch implementation of the Data Distribution Service (DDS) standard. It provides a publish-subscribe communication model for distributed systems with a focus on performance and reliability.
-
-**Note:** This project is primarily for study purposes, designed to help understand the core concepts and architecture of DDS systems. It is not intended for production use without further development and testing.
+A lightweight Data Distribution Service (DDS) implementation for educational purposes. This project is intended for learning and is not designed for production use.
 
 ## Features
 
-- Efficient publish-subscribe messaging pattern
-- Protocol Buffers (protobuf) message serialization
-- Lightweight implementation with minimal dependencies
-- High-performance data distribution
-- Comprehensive test coverage
-- YAML-based configuration for easy DDS entity setup
+- Simple implementation of core DDS concepts (Domain, Participant, Topic, Publisher, Subscriber)
+- Support for multiple transport methods:
+  - UDP for network communication
+  - Shared memory for high-speed local communication
+  - Local-only for in-process communication
+- Configurable QoS (Quality of Service) settings
+- YAML-based configuration for easy setup
 
-## Building
+## Usage
 
-This project uses Bazel as its build system with bzlmod for dependency management.
-
-```bash
-# Build the entire project
-bazel build //...
-
-# Run all tests
-bazel test //...
-```
-
-## Project Structure
-
-- `src/` - Source code for the Tiny DDS implementation
-  - `core/` - Core DDS functionality
-  - `transport/` - Transport layer implementation
-  - `serialization/` - Message serialization handling
-  - `api/` - Public API
-  - `config/` - YAML configuration and auto-loading functionality
-- `include/` - Public headers
-- `test/` - Test cases using Google Test
-- `examples/` - Example applications
-- `protos/` - Protocol Buffer definitions
-- `third_party/` - Third-party dependencies and build files
-
-## Usage Examples
-
-### Basic Publisher-Subscriber
+### Basic Usage
 
 ```cpp
-// Create domain participants
-auto participant = DomainParticipant::Create(0, "MyParticipant");
+#include "include/tiny_dds/domain_participant.h"
+#include "include/tiny_dds/publisher.h"
+#include "include/tiny_dds/subscriber.h"
+#include "include/tiny_dds/topic.h"
+
+// Create a domain participant
+auto participant = tiny_dds::DomainParticipant::Create(0, "MyParticipant");
+
+// Create a topic
+auto topic = participant->CreateTopic("MyTopic", "MyType");
 
 // Create publisher and subscriber
 auto publisher = participant->CreatePublisher();
 auto subscriber = participant->CreateSubscriber();
 
-// Create a topic
-auto topic = participant->CreateTopic("MyTopic", "MyDataType");
-
 // Create data writer and reader
 auto writer = publisher->CreateDataWriter(topic);
 auto reader = subscriber->CreateDataReader(topic);
 
-// Setup callback for data reception
-reader->SetDataReceivedCallback([](const void* data, size_t size, const SampleInfo& info) {
-    // Process received data
+// Set up data reception callback
+reader->SetDataCallback([](tiny_dds::DomainId domain_id, const std::string& topic_name, 
+                         const void* data, size_t size) {
+    // Handle received data
 });
 
-// Publish data
-writer->Write(data_buffer, data_size);
+// Write data
+std::vector<uint8_t> data = {1, 2, 3, 4, 5};
+writer->Write(data.data(), data.size());
 ```
 
 ### YAML Configuration
 
-Tiny DDS supports configuring DDS entities using YAML files. This allows for easy setup and configuration without changing code.
-
-Example YAML configuration:
+You can define your entire DDS application structure in a YAML file:
 
 ```yaml
 participants:
-  - name: "Example Participant"
+  - name: "ExampleParticipant"
     domain_id: 0
     
-    publishers:
-      - name: "Example Publisher"
+    topics:
+      - name: "Example Topic"
+        type_name: "ExampleMessage"
         qos:
           reliability: "RELIABLE"
           durability: "TRANSIENT_LOCAL"
-        
-        topics:
-          - name: "Example Topic"
-            type: "ExampleMessage"
-            qos:
-              reliability: "RELIABLE"
-              durability: "TRANSIENT_LOCAL"
+    
+    publishers:
+      - name: "ExamplePublisher"
+        qos:
+          reliability: "RELIABLE"
+          durability: "TRANSIENT_LOCAL"
+        transport:
+          type: "SHARED_MEMORY"
+          buffer_size: 1048576  # 1MB buffer
+          max_message_size: 65536  # 64KB max message size
+        topic_names:
+          - "Example Topic"
     
     subscribers:
-      - name: "Example Subscriber"
+      - name: "ExampleSubscriber"
         qos:
           reliability: "RELIABLE"
           durability: "TRANSIENT_LOCAL"
-        
-        topics:
-          - name: "Example Topic"
-            type: "ExampleMessage"
-            qos:
-              reliability: "RELIABLE"
-              durability: "TRANSIENT_LOCAL"
+        transport:
+          type: "SHARED_MEMORY"
+          buffer_size: 1048576  # 1MB buffer
+          max_message_size: 65536  # 64KB max message size
+        topic_names:
+          - "Example Topic"
 ```
 
-Using the configuration in code:
+Then load and use the configuration in your code:
 
 ```cpp
-// Create auto config loader
-auto config_loader = tiny_dds::auto_config::AutoConfigLoader::Create();
+#include "include/tiny_dds/auto_config.h"
 
 // Load DDS entities from YAML file
-if (!config_loader->LoadFromFile("path/to/config.yaml")) {
-    // Handle error
-}
+auto loader = tiny_dds::auto_config::AutoConfigLoader::Create();
+loader->LoadFromFile("config.yaml");
 
-// Get entities by name
-auto participant = config_loader->GetParticipant("Example Participant");
-auto publisher = config_loader->GetPublisher("Example Participant", "Example Publisher");
-auto subscriber = config_loader->GetSubscriber("Example Participant", "Example Subscriber");
-auto topic = config_loader->GetTopic("Example Participant", "Example Topic");
+// Get participant
+auto participant = loader->GetParticipant("ExampleParticipant");
+
+// Get publisher and subscriber
+auto publisher = loader->GetPublisher("ExampleParticipant", "ExamplePublisher");
+auto subscriber = loader->GetSubscriber("ExampleParticipant", "ExampleSubscriber");
+
+// Get topic
+auto topic = loader->GetTopic("ExampleParticipant", "Example Topic");
 
 // Create data writer and reader
-auto data_writer = publisher->CreateDataWriter(topic);
-auto data_reader = subscriber->CreateDataReader(topic);
+auto writer = publisher->CreateDataWriter(*topic);
+auto reader = subscriber->CreateDataReader(*topic);
 
-// Use entities as usual
+// Use writer and reader as normal...
 ```
 
-Run the YAML configuration example:
+### Transport Types
+
+Tiny DDS supports multiple transport mechanisms:
+
+1. **UDP** - Network communication using UDP sockets
+   - Suitable for distributed applications
+   - Configurable via address and port settings
+
+2. **SHARED_MEMORY** - High-speed local communication
+   - Much faster than UDP for processes on the same machine
+   - Uses shared memory regions and semaphores for synchronization
+   - Configurable buffer sizes for performance tuning
+
+3. **LOCAL_ONLY** - In-process communication
+   - Fastest option when publishers and subscribers are in the same process
+   - No serialization overhead
+
+You can specify the transport type in YAML configuration:
+
+```yaml
+transport:
+  type: "SHARED_MEMORY"  # or "UDP" or "LOCAL_ONLY"
+  buffer_size: 1048576   # for SHARED_MEMORY (1MB)
+  max_message_size: 65536  # for SHARED_MEMORY (64KB)
+  address: "127.0.0.1"   # for UDP
+  port: 7400             # for UDP
+```
+
+Or in code:
+
+```cpp
+// When using the auto-configuration approach
+loader->LoadFromFile("config.yaml");
+
+// When creating entities manually
+auto participant = tiny_dds::DomainParticipant::Create(0, "MyParticipant");
+participant->SetTransportType(tiny_dds::TransportType::SHARED_MEMORY);
+```
+
+## Running Examples
 
 ```bash
-bazel run //examples:yaml_config_example -- --config_file=examples/config/dds_config.yaml
+# Run the YAML configuration example with shared memory transport
+bazel run //examples:yaml_config_example -- --config_file=examples/config/dds_config.yaml --transport=SHARED_MEMORY
+
+# Run the YAML configuration example with UDP transport
+bazel run //examples:yaml_config_example -- --config_file=examples/config/dds_config.yaml --transport=UDP
+```
+
+## Building
+
+```bash
+bazel build //...
+```
+
+## Testing
+
+```bash
+bazel test //test:all
 ```
 
 ## License
 
-MIT 
+This project is licensed under the MIT License - see the LICENSE file for details. 

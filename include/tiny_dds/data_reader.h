@@ -22,6 +22,17 @@ class Topic;
 using DataReaderCallback = std::function<void(const void* data, size_t size, const SampleInfo& info)>;
 
 /**
+ * @brief Callback function type for data reception with domain and topic information.
+ * 
+ * @param domain_id The domain ID the data was received on.
+ * @param topic_name The name of the topic the data was received on.
+ * @param data Pointer to the serialized message data.
+ * @param size Size of the serialized data in bytes.
+ */
+using DataCallback = std::function<void(DomainId domain_id, const std::string& topic_name, 
+                                       const void* data, size_t size)>;
+
+/**
  * @brief DataReader is the interface for reading data from a topic.
  * 
  * Subscribers create DataReader objects to receive data of a specific type.
@@ -53,6 +64,12 @@ public:
      * @param callback The callback function.
      */
     virtual void SetDataReceivedCallback(DataReaderCallback callback) = 0;
+    
+    /**
+     * @brief Sets a callback function to be called when data is received, with domain and topic information.
+     * @param callback The callback function.
+     */
+    virtual void SetDataCallback(DataCallback callback) = 0;
 
     /**
      * @brief Gets the topic associated with this DataReader.

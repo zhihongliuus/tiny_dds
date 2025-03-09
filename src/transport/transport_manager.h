@@ -1,142 +1,121 @@
 #ifndef TINY_DDS_TRANSPORT_TRANSPORT_MANAGER_H_
 #define TINY_DDS_TRANSPORT_TRANSPORT_MANAGER_H_
 
-#include <functional>
+#include <cstdint>
 #include <memory>
-#include <mutex>
 #include <string>
-#include <thread>
 #include <unordered_map>
-#include <vector>
+#include <mutex>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/synchronization/mutex.h"
-
+#include "include/tiny_dds/transport.h"
+#include "include/tiny_dds/transport_types.h"
 #include "include/tiny_dds/types.h"
+#include "src/transport/shared_memory_transport.h"
+#include "src/transport/udp_transport.h"
 
 namespace tiny_dds {
 namespace transport {
 
 /**
- * @brief Callback function type for data reception.
- * 
- * @param domain_id The domain ID the data was received on.
- * @param topic_name The name of the topic the data was received on.
- * @param data Pointer to the serialized message data.
- * @param size Size of the serialized data in bytes.
- */
-using DataReceivedCallback = std::function<void(
-    DomainId domain_id, 
-    const std::string& topic_name, 
-    const void* data, 
-    size_t size)>;
-
-/**
- * @brief Manager for transport-level communication.
- * 
- * This class handles the low-level communication between DDS participants,
- * including discovery and data transfer.
+ * @brief Manages different transport implementations.
  */
 class TransportManager {
 public:
     /**
-     * @brief Gets the singleton instance of the TransportManager.
-     * @return A reference to the TransportManager instance.
+     * @brief Creates a new transport manager.
+     * 
+     * @return std::shared_ptr<TransportManager> The created manager.
      */
-    static TransportManager& GetInstance();
+    static std::shared_ptr<TransportManager> Create();
 
     /**
-     * @brief Registers a publisher for a topic in a domain.
+     * @brief Sends data via the appropriate transport.
+     * 
      * @param domain_id The domain ID.
-     * @param topic_name The name of the topic.
-     * @param type_name The name of the data type.
-     * @return True if registration was successful, false otherwise.
+     * @param topic_name The topic name.
+     * @param data The data to send.
+     * @param size The size of the data.
+     * @param transport_type The transport type to use.
+     * @return true if successful, false otherwise.
      */
-    bool RegisterPublisher(
-        DomainId domain_id, 
-        const std::string& topic_name, 
-        const std::string& type_name);
+    bool Send(DomainId domain_id, const std::string& topic_name, 
+              const void* data, size_t size, 
+              TransportType transport_type = TransportType::UDP);
 
     /**
-     * @brief Unregisters a publisher for a topic in a domain.
+     * @brief Receives data via the appropriate transport.
+     * 
      * @param domain_id The domain ID.
-     * @param topic_name The name of the topic.
+     * @param topic_name The topic name.
+     * @param buffer The buffer to store the data.
+     * @param buffer_size The size of the buffer.
+     * @param bytes_received The number of bytes received.
+     * @param transport_type The transport type to use.
+     * @return true if successful, false otherwise.
      */
-    void UnregisterPublisher(
-        DomainId domain_id, 
-        const std::string& topic_name);
+    bool Receive(DomainId domain_id, const std::string& topic_name, 
+                 void* buffer, size_t buffer_size, size_t* bytes_received,
+                 TransportType transport_type = TransportType::UDP);
 
     /**
-     * @brief Registers a subscriber for a topic in a domain.
+     * @brief Creates a transport for a topic.
+     * 
      * @param domain_id The domain ID.
-     * @param topic_name The name of the topic.
-     * @param type_name The name of the data type.
-     * @param callback The callback function to be called when data is received.
-     * @return True if registration was successful, false otherwise.
+     * @param participant_name The participant name.
+     * @param topic_name The topic name.
+     * @param buffer_size The size of the buffer (for shared memory).
+     * @param max_message_size The maximum message size (for shared memory).
+     * @param transport_type The transport type to use.
+     * @return true if successful, false otherwise.
      */
-    bool RegisterSubscriber(
-        DomainId domain_id, 
-        const std::string& topic_name, 
-        const std::string& type_name,
-        DataReceivedCallback callback);
+    bool CreateTransport(DomainId domain_id, const std::string& participant_name,
+                        const std::string& topic_name, 
+                        size_t buffer_size, size_t max_message_size,
+                        TransportType transport_type = TransportType::UDP);
 
     /**
-     * @brief Unregisters a subscriber for a topic in a domain.
+     * @brief Advertises a topic on the specified transport.
+     * 
      * @param domain_id The domain ID.
-     * @param topic_name The name of the topic.
+     * @param topic_name The topic name.
+     * @param transport_type The transport type to use.
+     * @return true if successful, false otherwise.
      */
-    void UnregisterSubscriber(
-        DomainId domain_id, 
-        const std::string& topic_name);
+    bool Advertise(DomainId domain_id, const std::string& topic_name,
+                  TransportType transport_type = TransportType::UDP);
 
     /**
-     * @brief Publishes data to a topic in a domain.
+     * @brief Subscribes to a topic on the specified transport.
+     * 
      * @param domain_id The domain ID.
-     * @param topic_name The name of the topic.
-     * @param data Pointer to the serialized message data.
-     * @param size Size of the serialized data in bytes.
-     * @return True if publish was successful, false otherwise.
+     * @param topic_name The topic name.
+     * @param transport_type The transport type to use.
+     * @return true if successful, false otherwise.
      */
-    bool Publish(
-        DomainId domain_id, 
-        const std::string& topic_name, 
-        const void* data, 
-        size_t size);
+    bool Subscribe(DomainId domain_id, const std::string& topic_name,
+                  TransportType transport_type = TransportType::UDP);
 
 private:
-    // Private constructor to enforce singleton pattern
+    /**
+     * @brief Constructor.
+     */
     TransportManager();
     
-    // Private destructor
-    ~TransportManager();
+    /**
+     * @brief Gets the appropriate transport for the given type.
+     * 
+     * @param domain_id The domain ID.
+     * @param transport_type The transport type.
+     * @return std::shared_ptr<Transport> The transport instance.
+     */
+    std::shared_ptr<Transport> GetTransport(DomainId domain_id, TransportType transport_type);
     
-    // Deleted copy constructor and assignment operator
-    TransportManager(const TransportManager&) = delete;
-    TransportManager& operator=(const TransportManager&) = delete;
-
-    // Structure to hold publisher information
-    struct PublisherInfo {
-        std::string type_name;
-    };
-    
-    // Structure to hold subscriber information
-    struct SubscriberInfo {
-        std::string type_name;
-        DataReceivedCallback callback;
-    };
-    
-    // Map of publishers by domain ID and topic name
-    absl::flat_hash_map<
-        DomainId, 
-        absl::flat_hash_map<std::string, PublisherInfo>> publishers_;
-    
-    // Map of subscribers by domain ID and topic name
-    absl::flat_hash_map<
-        DomainId, 
-        absl::flat_hash_map<std::string, SubscriberInfo>> subscribers_;
+    // Map of domain ID to transport instances
+    std::unordered_map<DomainId, std::shared_ptr<Transport>> udp_transports_;
+    std::unordered_map<DomainId, std::shared_ptr<Transport>> shared_memory_transports_;
     
     // Mutex for thread safety
-    mutable absl::Mutex mutex_;
+    std::mutex mutex_;
 };
 
 } // namespace transport

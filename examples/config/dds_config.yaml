@@ -1,29 +1,66 @@
 participants:
-  - name: "Example Participant"
+  - name: "ExampleParticipant"
     domain_id: 0
     
-    publishers:
-      - name: "Example Publisher"
+    topics:
+      - name: "Example Topic"
+        type_name: "ExampleMessage"
         qos:
           reliability: "RELIABLE"
           durability: "TRANSIENT_LOCAL"
-        
-        topics:
-          - name: "Example Topic"
-            type: "ExampleMessage"
-            qos:
-              reliability: "RELIABLE"
-              durability: "TRANSIENT_LOCAL"
+    
+    publishers:
+      - name: "ExamplePublisher"
+        qos:
+          reliability: "RELIABLE"
+          durability: "TRANSIENT_LOCAL"
+        transport:
+          type: "SHARED_MEMORY"
+          buffer_size: 1048576  # 1MB buffer
+          max_message_size: 65536  # 64KB max message size
+        topic_names:
+          - "Example Topic"
     
     subscribers:
-      - name: "Example Subscriber"
+      - name: "ExampleSubscriber"
         qos:
           reliability: "RELIABLE"
           durability: "TRANSIENT_LOCAL"
-        
-        topics:
-          - name: "Example Topic"
-            type: "ExampleMessage"
-            qos:
-              reliability: "RELIABLE"
-              durability: "TRANSIENT_LOCAL" 
+        transport:
+          type: "SHARED_MEMORY"
+          buffer_size: 1048576  # 1MB buffer
+          max_message_size: 65536  # 64KB max message size
+        topic_names:
+          - "Example Topic"
+
+  - name: "UdpParticipant"
+    domain_id: 1
+    
+    topics:
+      - name: "UDP Topic"
+        type_name: "ExampleMessage"
+        qos:
+          reliability: "BEST_EFFORT"
+          durability: "VOLATILE"
+    
+    publishers:
+      - name: "UdpPublisher"
+        qos:
+          reliability: "BEST_EFFORT"
+        transport:
+          type: "UDP"
+          address: "127.0.0.1"
+          port: 7400
+        topic_names:
+          - "UDP Topic"
+    
+    subscribers:
+      - name: "UdpSubscriber"
+        qos:
+          reliability: "BEST_EFFORT"
+        transport:
+          type: "UDP"
+          address: "127.0.0.1"
+          port: 7401
+        topic_names:
+          - "UDP Topic" 

@@ -15,31 +15,42 @@ DataWriterImpl::DataWriterImpl(
       publisher_(publisher) {
     // Initialize any resources needed for the data writer
     
-    // Register with the transport manager
-    transport::TransportManager::GetInstance().RegisterPublisher(
+    // Get the transport manager
+    auto transport_manager = transport::TransportManager::Create();
+    
+    // Create the transport for this topic
+    transport_manager->CreateTransport(
+        publisher_->GetParticipant()->GetDomainId(),
+        publisher_->GetParticipant()->GetName(),
+        topic_->GetName(),
+        1024 * 1024,  // 1MB buffer size
+        64 * 1024,    // 64KB max message size
+        publisher_->GetParticipant()->GetTransportType());
+    
+    // Advertise the topic
+    transport_manager->Advertise(
         publisher_->GetParticipant()->GetDomainId(),
         topic_->GetName(),
-        topic_->GetTypeName());
+        publisher_->GetParticipant()->GetTransportType());
 }
 
 DataWriterImpl::~DataWriterImpl() {
     // Clean up resources
-    
-    // Unregister from the transport manager
-    transport::TransportManager::GetInstance().UnregisterPublisher(
-        publisher_->GetParticipant()->GetDomainId(),
-        topic_->GetName());
 }
 
 bool DataWriterImpl::Write(const void* data, size_t size) {
     absl::MutexLock lock(&mutex_);
     
+    // Get the transport manager
+    auto transport_manager = transport::TransportManager::Create();
+    
     // Use the transport manager to publish the data
-    return transport::TransportManager::GetInstance().Publish(
+    return transport_manager->Send(
         publisher_->GetParticipant()->GetDomainId(),
         topic_->GetName(),
         data,
-        size);
+        size,
+        publisher_->GetParticipant()->GetTransportType());
 }
 
 std::shared_ptr<tiny_dds::Topic> DataWriterImpl::GetTopic() const {

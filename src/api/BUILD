@@ -1,16 +1,15 @@
-package(default_visibility = ["//visibility:public"])
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
     name = "api",
     srcs = glob(["*.cc"], allow_empty = True),
     hdrs = glob(["*.h"], allow_empty = True),
+    visibility = ["//visibility:public"],
     deps = [
-        "//include/tiny_dds:tiny_dds_headers",
-        "//src/config",
+        "//include/tiny_dds:headers",
         "//src/core",
+        "//src/config",
         "//src/serialization",
         "//src/transport",
-        "@abseil-cpp//absl/status",
-        "@abseil-cpp//absl/strings",
     ],
 ) 
