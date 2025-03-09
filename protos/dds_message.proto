@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package tiny_dds.protos;
+
+// Message envelope for DDS messages
+message DdsMessageEnvelope {
+  // Domain ID
+  uint32 domain_id = 1;
+  
+  // Topic name
+  string topic_name = 2;
+  
+  // Type name
+  string type_name = 3;
+  
+  // Serialized message data
+  bytes data = 4;
+  
+  // Timestamp in microseconds since epoch
+  uint64 timestamp_us = 5;
+  
+  // Sequence number
+  uint64 sequence_number = 6;
+  
+  // Source participant ID
+  string source_participant_id = 7;
+}
+
+// Discovery message for participants
+message ParticipantDiscovery {
+  // Domain ID
+  uint32 domain_id = 1;
+  
+  // Participant ID
+  string participant_id = 2;
+  
+  // Participant name
+  string participant_name = 3;
+  
+  // Is the participant alive (true) or being removed (false)
+  bool is_alive = 4;
+}
+
+// Discovery message for topics
+message TopicDiscovery {
+  // Domain ID
+  uint32 domain_id = 1;
+  
+  // Participant ID
+  string participant_id = 2;
+  
+  // Topic name
+  string topic_name = 3;
+  
+  // Type name
+  string type_name = 4;
+  
+  // Is the topic being published (true) or unpublished (false)
+  bool is_published = 5;
+}
+
+// Discovery message for subscriptions
+message SubscriptionDiscovery {
+  // Domain ID
+  uint32 domain_id = 1;
+  
+  // Participant ID
+  string participant_id = 2;
+  
+  // Topic name
+  string topic_name = 3;
+  
+  // Type name
+  string type_name = 4;
+  
+  // Is the subscription active (true) or being removed (false)
+  bool is_active = 5;
+} 

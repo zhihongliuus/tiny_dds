@@ -1,0 +1,10 @@
+module(
+    name = "tiny_dds",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "googletest", version = "1.14.0")
+bazel_dep(name = "protobuf", version = "21.7")
+bazel_dep(name = "abseil-cpp", version = "20230802.0")
+bazel_dep(name = "rules_cc", version = "0.0.4")
+bazel_dep(name = "rules_proto", version = "5.3.0-21.7") 

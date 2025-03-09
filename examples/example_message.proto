@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package tiny_dds.examples;
+
+message ExampleMessage {
+  int32 id = 1;
+  string text = 2;
+  double value = 3;
+  repeated int32 data = 4;
+} 

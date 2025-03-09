@@ -1,0 +1,15 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "core",
+    srcs = glob(["*.cc"], allow_empty = True),
+    hdrs = glob(["*.h"], allow_empty = True),
+    deps = [
+        "//include/tiny_dds:tiny_dds_headers",
+        "//src/transport",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/container:flat_hash_map",
+        "@abseil-cpp//absl/synchronization",
+        "@abseil-cpp//absl/time",
+    ],
+) 
