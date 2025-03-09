@@ -43,4 +43,23 @@ cc_binary(
         "@abseil-cpp//absl/time",
         "@protobuf//:protobuf",
     ],
+)
+
+cc_binary(
+    name = "yaml_config_example",
+    srcs = ["yaml_config_example.cc"],
+    deps = [
+        "//include/tiny_dds:tiny_dds_headers",
+        "//src/api",
+        "//src/config",
+        "//src/core",
+        "//src/serialization",
+        "//src/transport",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/time",
+    ],
+    data = [
+        "config/dds_config.yaml",
+    ],
 ) 

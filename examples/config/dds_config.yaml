@@ -1,0 +1,29 @@
+participants:
+  - name: "Example Participant"
+    domain_id: 0
+    
+    publishers:
+      - name: "Example Publisher"
+        qos:
+          reliability: "RELIABLE"
+          durability: "TRANSIENT_LOCAL"
+        
+        topics:
+          - name: "Example Topic"
+            type: "ExampleMessage"
+            qos:
+              reliability: "RELIABLE"
+              durability: "TRANSIENT_LOCAL"
+    
+    subscribers:
+      - name: "Example Subscriber"
+        qos:
+          reliability: "RELIABLE"
+          durability: "TRANSIENT_LOCAL"
+        
+        topics:
+          - name: "Example Topic"
+            type: "ExampleMessage"
+            qos:
+              reliability: "RELIABLE"
+              durability: "TRANSIENT_LOCAL" 

@@ -7,4 +7,16 @@ bazel_dep(name = "googletest", version = "1.14.0")
 bazel_dep(name = "protobuf", version = "21.7")
 bazel_dep(name = "abseil-cpp", version = "20230802.0")
 bazel_dep(name = "rules_cc", version = "0.0.4")
-bazel_dep(name = "rules_proto", version = "5.3.0-21.7") 
+bazel_dep(name = "rules_proto", version = "5.3.0-21.7")
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+
+# Use http_archive for yaml-cpp instead of bazel_dep
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "yaml_cpp",
+    sha256 = "43e6a9fcb146ad871515f0d0873947e5d497a1c9c60c58cb102a97b47208b7c3",
+    strip_prefix = "yaml-cpp-yaml-cpp-0.7.0",
+    urls = ["https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.tar.gz"],
+    build_file = "@//third_party:yaml_cpp.BUILD",
+) 
