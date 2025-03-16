@@ -1,0 +1,3 @@
+# Common build settings
+build --enable_platform_specific_config
+build --cxxopt=-std=c++17
