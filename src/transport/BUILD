@@ -19,5 +19,6 @@ cc_library(
         "//include/tiny_dds:transport_types",
         "//include/tiny_dds:types",
     ],
+    linkopts = ["-lrt"],
     visibility = ["//visibility:public"],
 ) 

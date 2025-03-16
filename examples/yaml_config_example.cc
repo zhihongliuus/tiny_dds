@@ -106,8 +106,8 @@ int main(int argc, char** argv) {
     }
     
     // Create data writer and reader
-    auto writer = publisher->CreateDataWriter(*topic);
-    auto reader = subscriber->CreateDataReader(*topic);
+    auto writer = publisher->CreateDataWriter(topic);
+    auto reader = subscriber->CreateDataReader(topic);
     if (!writer || !reader) {
         std::cerr << "Error: Failed to create data writer or reader" << std::endl;
         return 1;

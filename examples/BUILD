@@ -17,12 +17,14 @@ cc_binary(
     name = "simple_pub_sub",
     srcs = ["simple_pub_sub.cc"],
     deps = [
-        ":example_message_cc_proto",
         "//include/tiny_dds:headers",
         "//src/api",
         "//src/core",
         "//src/serialization",
         "//src/transport",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/time",
     ],
 )
 
@@ -31,7 +33,7 @@ cc_binary(
     srcs = ["protobuf_pub_sub.cc"],
     deps = [
         ":example_message_cc_proto",
-        "//include/tiny_dds:tiny_dds_headers",
+        "//include/tiny_dds:headers",
         "//src/api",
         "//src/core",
         "//src/serialization",
@@ -44,26 +46,13 @@ cc_binary(
 )
 
 cc_binary(
-    name = "publisher_example",
-    srcs = ["publisher_example.cc"],
-    deps = [
-        "//src/api:api",
-    ],
-)
-
-cc_binary(
-    name = "subscriber_example",
-    srcs = ["subscriber_example.cc"],
-    deps = [
-        "//src/api:api",
-    ],
-)
-
-cc_binary(
     name = "yaml_config_example",
     srcs = ["yaml_config_example.cc"],
     deps = [
         "//src/api:api",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/time",
     ],
     data = [
         "//examples/config:dds_config.yaml",
