@@ -4,11 +4,10 @@
 #include "src/core/domain_participant_impl.h"
 #include "src/core/topic_impl.h"
 
-namespace tiny_dds {
-namespace core {
+namespace tiny_dds::core {
 
 PublisherImpl::PublisherImpl(std::shared_ptr<DomainParticipantImpl> participant)
-    : participant_(participant) {
+    : participant_(std::move(participant)) {
     // Initialize any resources needed for the publisher
 }
 
@@ -18,8 +17,8 @@ PublisherImpl::~PublisherImpl() {
     data_writers_.clear();
 }
 
-std::shared_ptr<DataWriter> PublisherImpl::CreateDataWriter(
-    std::shared_ptr<Topic> topic) {
+auto PublisherImpl::CreateDataWriter(
+    std::shared_ptr<Topic> topic) -> std::shared_ptr<DataWriter> {
     // Store the participant pointer locally to avoid locking during DataWriterImpl construction
     std::shared_ptr<DomainParticipantImpl> participant;
     {
@@ -29,7 +28,7 @@ std::shared_ptr<DataWriter> PublisherImpl::CreateDataWriter(
     
     // Create a new data writer
     auto data_writer = std::make_shared<DataWriterImpl>(
-        topic, shared_from_this());
+        std::move(topic), shared_from_this());
     
     // Add it to our map
     {
@@ -40,10 +39,9 @@ std::shared_ptr<DataWriter> PublisherImpl::CreateDataWriter(
     return data_writer;
 }
 
-std::shared_ptr<DomainParticipantImpl> PublisherImpl::GetParticipant() const {
+auto PublisherImpl::GetParticipant() const -> std::shared_ptr<DomainParticipantImpl> {
     absl::MutexLock lock(&mutex_);
     return participant_;
 }
 
-} // namespace core
-} // namespace tiny_dds 
+} // namespace tiny_dds::core 

@@ -2,10 +2,9 @@
 
 #include <cstdint>
 
-namespace tiny_dds {
-namespace serialization {
+namespace tiny_dds::serialization {
 
-std::vector<uint8_t> ProtobufSerializer::Serialize(const google::protobuf::Message& message) {
+auto ProtobufSerializer::Serialize(const google::protobuf::Message& message) -> std::vector<uint8_t> {
     std::vector<uint8_t> result;
     
     // Reserve space for the serialized message
@@ -18,8 +17,8 @@ std::vector<uint8_t> ProtobufSerializer::Serialize(const google::protobuf::Messa
     return result;
 }
 
-bool ProtobufSerializer::Deserialize(const void* data, size_t size, google::protobuf::Message* message) {
-    if (!data || !message) {
+auto ProtobufSerializer::Deserialize(const void* data, size_t size, google::protobuf::Message* message) -> bool {
+    if (data == nullptr || message == nullptr) {
         return false;
     }
     
@@ -27,9 +26,8 @@ bool ProtobufSerializer::Deserialize(const void* data, size_t size, google::prot
     return message->ParseFromArray(data, static_cast<int>(size));
 }
 
-std::string ProtobufSerializer::GetTypeName(const google::protobuf::Message& message) {
+auto ProtobufSerializer::GetTypeName(const google::protobuf::Message& message) -> std::string {
     return message.GetDescriptor()->full_name();
 }
 
-} // namespace serialization
-} // namespace tiny_dds 
+} // namespace tiny_dds::serialization 

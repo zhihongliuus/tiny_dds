@@ -2,20 +2,17 @@
 
 #include <iostream>
 
-namespace tiny_dds {
-namespace transport {
+namespace tiny_dds::transport {
 
-std::shared_ptr<TransportManager> TransportManager::Create() {
+auto TransportManager::Create() -> std::shared_ptr<TransportManager> {
     return std::shared_ptr<TransportManager>(new TransportManager());
 }
 
-TransportManager::TransportManager() {
-    // Initialize any resources needed for the transport manager
-}
+TransportManager::TransportManager() = default;
 
-bool TransportManager::Send(DomainId domain_id, const std::string& topic_name, 
+auto TransportManager::Send(DomainId domain_id, const std::string& topic_name, 
                            const void* data, size_t size, 
-                           TransportType transport_type) {
+                           TransportType transport_type) -> bool {
     auto transport = GetTransport(domain_id, transport_type);
     if (!transport) {
         std::cerr << "Transport not found for domain " << domain_id << std::endl;
@@ -25,9 +22,9 @@ bool TransportManager::Send(DomainId domain_id, const std::string& topic_name,
     return transport->Send(topic_name, data, size);
 }
 
-bool TransportManager::Receive(DomainId domain_id, const std::string& topic_name, 
+auto TransportManager::Receive(DomainId domain_id, const std::string& topic_name, 
                               void* buffer, size_t buffer_size, size_t* bytes_received,
-                              TransportType transport_type) {
+                              TransportType transport_type) -> bool {
     auto transport = GetTransport(domain_id, transport_type);
     if (!transport) {
         std::cerr << "Transport not found for domain " << domain_id << std::endl;
@@ -102,8 +99,8 @@ bool TransportManager::Subscribe(DomainId domain_id, const std::string& topic_na
     return transport->Subscribe(topic_name);
 }
 
-std::shared_ptr<Transport> TransportManager::GetTransport(DomainId domain_id, 
-                                                         TransportType transport_type) {
+auto TransportManager::GetTransport(DomainId domain_id, 
+                                   TransportType transport_type) -> std::shared_ptr<Transport> {
     std::lock_guard<std::mutex> lock(mutex_);
     
     switch (transport_type) {
@@ -129,5 +126,4 @@ std::shared_ptr<Transport> TransportManager::GetTransport(DomainId domain_id,
     return nullptr;
 }
 
-} // namespace transport
-} // namespace tiny_dds 
+} // namespace tiny_dds::transport 

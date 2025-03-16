@@ -8,8 +8,7 @@
 
 #include "include/tiny_dds/topic.h"
 
-namespace tiny_dds {
-namespace core {
+namespace tiny_dds::core {
 
 // Forward declarations
 class DomainParticipantImpl;
@@ -26,8 +25,8 @@ public:
      * @param type_name The name of the data type.
      * @param participant The domain participant that created this topic.
      */
-    TopicImpl(const std::string& topic_name, 
-             const std::string& type_name,
+    TopicImpl(std::string topic_name, 
+             std::string type_name,
              std::shared_ptr<DomainParticipantImpl> participant);
 
     /**
@@ -67,7 +66,6 @@ private:
     mutable absl::Mutex mutex_;
 };
 
-} // namespace core
-} // namespace tiny_dds
+} // namespace tiny_dds::core
 
 #endif // TINY_DDS_CORE_TOPIC_IMPL_H_ 

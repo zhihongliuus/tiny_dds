@@ -5,14 +5,17 @@
 #include "src/core/topic_impl.h"
 #include "src/transport/transport_manager.h"
 
-namespace tiny_dds {
-namespace core {
+namespace tiny_dds::core {
+
+// Constants to replace magic numbers
+constexpr size_t kDefaultBufferSize = 1024 * 1024;  // 1MB buffer size
+constexpr size_t kDefaultMaxMessageSize = 64 * 1024;  // 64KB max message size
 
 DataWriterImpl::DataWriterImpl(
     std::shared_ptr<tiny_dds::Topic> topic, 
     std::shared_ptr<PublisherImpl> publisher)
-    : topic_(topic),
-      publisher_(publisher) {
+    : topic_(std::move(topic)),
+      publisher_(std::move(publisher)) {
     // Initialize any resources needed for the data writer
     
     // Get the transport manager
@@ -23,8 +26,8 @@ DataWriterImpl::DataWriterImpl(
         publisher_->GetParticipant()->GetDomainId(),
         publisher_->GetParticipant()->GetName(),
         topic_->GetName(),
-        1024 * 1024,  // 1MB buffer size
-        64 * 1024,    // 64KB max message size
+        kDefaultBufferSize,
+        kDefaultMaxMessageSize,
         publisher_->GetParticipant()->GetTransportType());
     
     // Advertise the topic
@@ -68,5 +71,4 @@ std::shared_ptr<PublisherImpl> DataWriterImpl::GetPublisher() const {
     return publisher_;
 }
 
-} // namespace core
-} // namespace tiny_dds 
+} // namespace tiny_dds::core 

@@ -8,14 +8,17 @@
 #include "src/core/topic_impl.h"
 #include "src/transport/transport_manager.h"
 
-namespace tiny_dds {
-namespace core {
+namespace tiny_dds::core {
+
+// Constants to replace magic numbers
+constexpr size_t kDefaultBufferSize = 1024 * 1024;  // 1MB buffer size
+constexpr size_t kDefaultMaxMessageSize = 64 * 1024;  // 64KB max message size
 
 DataReaderImpl::DataReaderImpl(
     std::shared_ptr<Topic> topic, 
     std::shared_ptr<SubscriberImpl> subscriber)
-    : topic_(topic),
-      subscriber_(subscriber),
+    : topic_(std::move(topic)),
+      subscriber_(std::move(subscriber)),
       data_received_callback_(nullptr) {
     // Initialize any resources needed for the data reader
     
@@ -27,8 +30,8 @@ DataReaderImpl::DataReaderImpl(
         subscriber_->GetParticipant()->GetDomainId(),
         subscriber_->GetParticipant()->GetName(),
         topic_->GetName(),
-        1024 * 1024,  // 1MB buffer size
-        64 * 1024,    // 64KB max message size
+        kDefaultBufferSize,
+        kDefaultMaxMessageSize,
         subscriber_->GetParticipant()->GetTransportType());
     
     // Subscribe to the topic
@@ -96,5 +99,4 @@ std::shared_ptr<SubscriberImpl> DataReaderImpl::GetSubscriber() const {
     return subscriber_;
 }
 
-} // namespace core
-} // namespace tiny_dds 
+} // namespace tiny_dds::core 

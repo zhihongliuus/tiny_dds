@@ -2,16 +2,15 @@
 
 #include "src/core/domain_participant_impl.h"
 
-namespace tiny_dds {
-namespace core {
+namespace tiny_dds::core {
 
 TopicImpl::TopicImpl(
-    const std::string& topic_name, 
-    const std::string& type_name,
+    std::string topic_name, 
+    std::string type_name,
     std::shared_ptr<DomainParticipantImpl> participant)
-    : topic_name_(topic_name),
-      type_name_(type_name),
-      participant_(participant) {
+    : topic_name_(std::move(topic_name)),
+      type_name_(std::move(type_name)),
+      participant_(std::move(participant)) {
     // Initialize any resources needed for the topic
 }
 
@@ -34,5 +33,4 @@ std::shared_ptr<DomainParticipantImpl> TopicImpl::GetParticipant() const {
     return participant_;
 }
 
-} // namespace core
-} // namespace tiny_dds 
+} // namespace tiny_dds::core 
