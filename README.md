@@ -187,6 +187,41 @@ bazel run @hedron_compile_commands//:refresh_all -- --compilation_mode=dbg
 
 This will create a `compile_commands.json` file in the project root that clangd can use to provide accurate code intelligence.
 
+### Code Style and Linting
+
+This project follows the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). We use clang-format and clang-tidy to enforce consistent code style and catch common issues.
+
+#### Using clang-format
+
+To format your code according to the project's style guide:
+
+```bash
+# Format a specific file
+clang-format -i path/to/file.cc
+
+# Format all source files
+find src include examples test -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | xargs clang-format -i
+```
+
+#### Using clang-tidy
+
+To check your code for style violations and potential issues:
+
+```bash
+# Run the provided script to check all files
+./run-clang-tidy.sh
+
+# Run with the fix option to automatically fix issues where possible
+./run-clang-tidy.sh fix
+
+# Check a specific file
+clang-tidy -p . path/to/file.cc
+```
+
+The project includes the following configuration files:
+- `.clang-format`: Defines the formatting style based on Google's C++ style guide
+- `.clang-tidy`: Defines the linting rules and checks to be performed
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details. 

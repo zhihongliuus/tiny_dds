@@ -8,7 +8,6 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
-
 #include "include/tiny_dds/subscriber.h"
 
 namespace tiny_dds {
@@ -22,45 +21,45 @@ class DomainParticipantImpl;
  * @brief Implementation of the Subscriber interface.
  */
 class SubscriberImpl : public tiny_dds::Subscriber,
-                      public std::enable_shared_from_this<SubscriberImpl> {
-public:
-    /**
-     * @brief Constructor for SubscriberImpl.
-     * @param participant The domain participant that created this subscriber.
-     */
-    explicit SubscriberImpl(std::shared_ptr<DomainParticipantImpl> participant);
+                       public std::enable_shared_from_this<SubscriberImpl> {
+ public:
+  /**
+   * @brief Constructor for SubscriberImpl.
+   * @param participant The domain participant that created this subscriber.
+   */
+  explicit SubscriberImpl(std::shared_ptr<DomainParticipantImpl> participant);
 
-    /**
-     * @brief Destructor for SubscriberImpl.
-     */
-    ~SubscriberImpl() override;
+  /**
+   * @brief Destructor for SubscriberImpl.
+   */
+  ~SubscriberImpl() override;
 
-    /**
-     * @brief Creates a DataReader for a specific topic.
-     * @param topic The topic to subscribe to.
-     * @return A shared pointer to the created DataReader.
-     */
-    std::shared_ptr<tiny_dds::DataReader> CreateDataReader(
-        std::shared_ptr<tiny_dds::Topic> topic) override;
+  /**
+   * @brief Creates a DataReader for a specific topic.
+   * @param topic The topic to subscribe to.
+   * @return A shared pointer to the created DataReader.
+   */
+  std::shared_ptr<tiny_dds::DataReader> CreateDataReader(
+      std::shared_ptr<tiny_dds::Topic> topic) override;
 
-    /**
-     * @brief Gets the domain participant that created this subscriber.
-     * @return A shared pointer to the domain participant.
-     */
-    std::shared_ptr<DomainParticipantImpl> GetParticipant() const;
+  /**
+   * @brief Gets the domain participant that created this subscriber.
+   * @return A shared pointer to the domain participant.
+   */
+  std::shared_ptr<DomainParticipantImpl> GetParticipant() const;
 
-private:
-    // The domain participant that created this subscriber
-    std::shared_ptr<DomainParticipantImpl> participant_;
+ private:
+  // The domain participant that created this subscriber
+  std::shared_ptr<DomainParticipantImpl> participant_;
 
-    // Map of data readers by topic name
-    absl::flat_hash_map<std::string, std::shared_ptr<DataReaderImpl>> data_readers_;
+  // Map of data readers by topic name
+  absl::flat_hash_map<std::string, std::shared_ptr<DataReaderImpl>> data_readers_;
 
-    // Mutex for thread safety
-    mutable absl::Mutex mutex_;
+  // Mutex for thread safety
+  mutable absl::Mutex mutex_;
 };
 
-} // namespace core
-} // namespace tiny_dds
+}  // namespace core
+}  // namespace tiny_dds
 
-#endif // TINY_DDS_CORE_SUBSCRIBER_IMPL_H_ 
+#endif  // TINY_DDS_CORE_SUBSCRIBER_IMPL_H_
