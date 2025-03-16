@@ -175,6 +175,18 @@ bazel build //...
 bazel test //test:all
 ```
 
+## Development Tools
+
+### Generating compile_commands.json for clangd
+
+To enable IDE features like code completion and navigation with clangd, you can generate a `compile_commands.json` file:
+
+```bash
+bazel run @hedron_compile_commands//:refresh_all -- --compilation_mode=dbg
+```
+
+This will create a `compile_commands.json` file in the project root that clangd can use to provide accurate code intelligence.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details. 

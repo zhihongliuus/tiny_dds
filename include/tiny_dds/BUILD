@@ -94,7 +94,7 @@ cc_library(
     deps = [
         ":transport_types",
         ":types",
-        "@yaml_cpp//:yaml-cpp",
+        "@yaml-cpp//:yaml-cpp",
     ],
     visibility = ["//visibility:public"],
 )

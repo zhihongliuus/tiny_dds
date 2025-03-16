@@ -13,6 +13,6 @@ cc_library(
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/strings",
-        "@yaml_cpp//:yaml-cpp",
+        "@yaml-cpp//:yaml-cpp",
     ],
 ) 

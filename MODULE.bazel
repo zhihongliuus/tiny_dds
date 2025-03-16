@@ -9,14 +9,14 @@ bazel_dep(name = "abseil-cpp", version = "20230802.0")
 bazel_dep(name = "rules_cc", version = "0.0.4")
 bazel_dep(name = "rules_proto", version = "5.3.0-21.7")
 bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "yaml-cpp", version = "0.8.0")
 
-# Use http_archive for yaml-cpp instead of bazel_dep
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-http_archive(
-    name = "yaml_cpp",
-    sha256 = "43e6a9fcb146ad871515f0d0873947e5d497a1c9c60c58cb102a97b47208b7c3",
-    strip_prefix = "yaml-cpp-yaml-cpp-0.7.0",
-    urls = ["https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.tar.gz"],
-    build_file = "@//third_party:yaml_cpp.BUILD",
-) 
+# Hedron's Compile Commands Extractor for Bazel
+# https://github.com/hedronvision/bazel-compile-commands-extractor
+bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+git_override(
+    module_name = "hedron_compile_commands",
+    remote = "https://github.com/mikael-s-persson/bazel-compile-commands-extractor",
+    commit = "f5fbd4cee671d8d908f37c83abaf70fba5928fc7"
+)
