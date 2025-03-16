@@ -41,11 +41,9 @@ DataReaderImpl::DataReaderImpl(
         subscriber_->GetParticipant()->GetTransportType());
 }
 
-DataReaderImpl::~DataReaderImpl() {
-    // Clean up resources
-}
+DataReaderImpl::~DataReaderImpl() = default;
 
-int32_t DataReaderImpl::Read(void* buffer, size_t buffer_size, SampleInfo& info) {
+auto DataReaderImpl::Read(void* buffer, size_t buffer_size, SampleInfo& info) -> int32_t {
     absl::MutexLock lock(&mutex_);
     
     // Get the transport manager

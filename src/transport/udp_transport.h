@@ -11,8 +11,7 @@
 #include "include/tiny_dds/transport_types.h"
 #include "include/tiny_dds/types.h"
 
-namespace tiny_dds {
-namespace transport {
+namespace tiny_dds::transport {
 
 /**
  * @brief Implements transport over UDP for network communication.
@@ -26,9 +25,9 @@ public:
      * @param participant_name The name of the participant using this transport.
      * @return A shared pointer to the created transport.
      */
-    static std::shared_ptr<UdpTransport> Create(
+    static auto Create(
         DomainId domain_id,
-        const std::string& participant_name);
+        const std::string& participant_name) -> std::shared_ptr<UdpTransport>;
 
     /**
      * @brief Destructor, cleans up all UDP sockets.
@@ -40,7 +39,7 @@ public:
      * 
      * @return true if initialization was successful, false otherwise.
      */
-    bool Initialize() override;
+    auto Initialize() -> bool override;
     
     /**
      * @brief Sends data to a topic.
@@ -50,7 +49,7 @@ public:
      * @param size Size of the data in bytes.
      * @return true if the data was sent successfully, false otherwise.
      */
-    bool Send(const std::string& topic_name, const void* data, size_t size) override;
+    auto Send(const std::string& topic_name, const void* data, size_t size) -> bool override;
     
     /**
      * @brief Receives data from a topic.
@@ -61,8 +60,8 @@ public:
      * @param bytes_received Output parameter to store the number of bytes received.
      * @return true if data was received successfully, false otherwise.
      */
-    bool Receive(const std::string& topic_name, void* buffer, size_t buffer_size, 
-                size_t* bytes_received) override;
+    auto Receive(const std::string& topic_name, void* buffer, size_t buffer_size, 
+                size_t* bytes_received) -> bool override;
     
     /**
      * @brief Subscribes to a topic.
@@ -70,7 +69,7 @@ public:
      * @param topic_name The name of the topic to subscribe to.
      * @return true if subscription was successful, false otherwise.
      */
-    bool Subscribe(const std::string& topic_name) override;
+    auto Subscribe(const std::string& topic_name) -> bool override;
     
     /**
      * @brief Advertises a topic.
@@ -78,14 +77,14 @@ public:
      * @param topic_name The name of the topic to advertise.
      * @return true if advertisement was successful, false otherwise.
      */
-    bool Advertise(const std::string& topic_name) override;
+    auto Advertise(const std::string& topic_name) -> bool override;
     
     /**
      * @brief Gets the type of this transport.
      * 
      * @return The transport type.
      */
-    TransportType GetType() const override { return TransportType::UDP; }
+    auto GetType() const -> TransportType override { return TransportType::UDP; }
 
 private:
     /**
@@ -94,7 +93,7 @@ private:
      * @param domain_id The domain ID for this transport.
      * @param participant_name The name of the participant using this transport.
      */
-    UdpTransport(DomainId domain_id, const std::string& participant_name);
+    UdpTransport(DomainId domain_id, std::string participant_name);
 
     /**
      * @brief Creates a UDP socket for a topic.
@@ -102,7 +101,7 @@ private:
      * @param topic_name The topic name.
      * @return true if successful, false otherwise.
      */
-    bool CreateSocket(const std::string& topic_name);
+    auto CreateSocket(const std::string& topic_name) -> bool;
 
     /**
      * @brief Connects to an existing UDP socket for a topic.
@@ -110,7 +109,7 @@ private:
      * @param topic_name The topic name.
      * @return true if successful, false otherwise.
      */
-    bool ConnectToSocket(const std::string& topic_name);
+    auto ConnectToSocket(const std::string& topic_name) -> bool;
 
     /**
      * @brief Closes a UDP socket.
@@ -125,16 +124,16 @@ private:
      * @param topic_name The topic name.
      * @return int The UDP port.
      */
-    int GenerateUdpPort(const std::string& topic_name);
+    auto GenerateUdpPort(const std::string& topic_name) -> int;
 
     /**
      * @brief Information about a UDP socket.
      */
     struct UdpSocketInfo {
-        int socket_fd;             // Socket file descriptor
-        int port;                  // UDP port
+        int socket_fd{-1};         // Socket file descriptor
+        int port{0};               // UDP port
         std::string address;       // UDP address
-        bool is_publisher;         // Whether this is a publisher socket
+        bool is_publisher{false};  // Whether this is a publisher socket
     };
 
     // Domain ID for this transport
@@ -153,7 +152,6 @@ private:
     std::unordered_map<std::string, UdpSocketInfo> udp_sockets_;
 };
 
-} // namespace transport
-} // namespace tiny_dds
+} // namespace tiny_dds::transport
 
 #endif // TINY_DDS_TRANSPORT_UDP_TRANSPORT_H_ 

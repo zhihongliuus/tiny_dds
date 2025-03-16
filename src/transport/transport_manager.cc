@@ -34,10 +34,10 @@ auto TransportManager::Receive(DomainId domain_id, const std::string& topic_name
     return transport->Receive(topic_name, buffer, buffer_size, bytes_received);
 }
 
-bool TransportManager::CreateTransport(DomainId domain_id, const std::string& participant_name,
+auto TransportManager::CreateTransport(DomainId domain_id, const std::string& participant_name,
                                       const std::string& topic_name, 
                                       size_t buffer_size, size_t max_message_size,
-                                      TransportType transport_type) {
+                                      TransportType transport_type) -> bool {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // Check if we already have a transport for this domain and type
@@ -77,8 +77,8 @@ bool TransportManager::CreateTransport(DomainId domain_id, const std::string& pa
     return true;
 }
 
-bool TransportManager::Advertise(DomainId domain_id, const std::string& topic_name,
-                               TransportType transport_type) {
+auto TransportManager::Advertise(DomainId domain_id, const std::string& topic_name,
+                               TransportType transport_type) -> bool {
     auto transport = GetTransport(domain_id, transport_type);
     if (!transport) {
         std::cerr << "Transport not found for domain " << domain_id << std::endl;
@@ -88,8 +88,8 @@ bool TransportManager::Advertise(DomainId domain_id, const std::string& topic_na
     return transport->Advertise(topic_name);
 }
 
-bool TransportManager::Subscribe(DomainId domain_id, const std::string& topic_name,
-                               TransportType transport_type) {
+auto TransportManager::Subscribe(DomainId domain_id, const std::string& topic_name,
+                               TransportType transport_type) -> bool {
     auto transport = GetTransport(domain_id, transport_type);
     if (!transport) {
         std::cerr << "Transport not found for domain " << domain_id << std::endl;
