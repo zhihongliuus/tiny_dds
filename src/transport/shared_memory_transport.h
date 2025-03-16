@@ -11,8 +11,7 @@
 #include "include/tiny_dds/transport.h"
 #include "include/tiny_dds/transport_types.h"
 
-namespace tiny_dds {
-namespace transport {
+namespace tiny_dds::transport {
 
 /**
  * @brief Shared memory transport implementation.
@@ -32,12 +31,12 @@ public:
      * @param max_message_size The maximum size of a single message in bytes.
      * @return A shared pointer to the created transport.
      */
-    static std::shared_ptr<SharedMemoryTransport> Create(
+    static auto Create(
         DomainId domain_id,
-        const std::string& participant_name,
+        std::string participant_name,
         size_t buffer_size = 1024 * 1024,  // 1MB default
         size_t max_message_size = 64 * 1024  // 64KB default
-    );
+    ) -> std::shared_ptr<SharedMemoryTransport>;
     
     /**
      * @brief Destructor.
@@ -49,7 +48,7 @@ public:
      * 
      * @return true if initialization was successful, false otherwise.
      */
-    bool Initialize() override;
+    auto Initialize() -> bool override;
     
     /**
      * @brief Sends data to a topic.
@@ -59,7 +58,7 @@ public:
      * @param size Size of the data in bytes.
      * @return true if the data was sent successfully, false otherwise.
      */
-    bool Send(const std::string& topic_name, const void* data, size_t size) override;
+    auto Send(const std::string& topic_name, const void* data, size_t size) -> bool override;
     
     /**
      * @brief Receives data from a topic.
@@ -70,8 +69,8 @@ public:
      * @param bytes_received Output parameter to store the number of bytes received.
      * @return true if data was received successfully, false otherwise.
      */
-    bool Receive(const std::string& topic_name, void* buffer, size_t buffer_size, 
-                size_t* bytes_received) override;
+    auto Receive(const std::string& topic_name, void* buffer, size_t buffer_size, 
+                size_t* bytes_received) -> bool override;
     
     /**
      * @brief Subscribes to a topic.
@@ -79,7 +78,7 @@ public:
      * @param topic_name The name of the topic to subscribe to.
      * @return true if subscription was successful, false otherwise.
      */
-    bool Subscribe(const std::string& topic_name) override;
+    auto Subscribe(const std::string& topic_name) -> bool override;
     
     /**
      * @brief Advertises a topic.
@@ -87,18 +86,18 @@ public:
      * @param topic_name The name of the topic to advertise.
      * @return true if advertisement was successful, false otherwise.
      */
-    bool Advertise(const std::string& topic_name) override;
+    auto Advertise(const std::string& topic_name) -> bool override;
     
     /**
      * @brief Gets the type of this transport.
      * 
      * @return The transport type.
      */
-    TransportType GetType() const override { return TransportType::SHARED_MEMORY; }
+    auto GetType() const -> TransportType override { return TransportType::SHARED_MEMORY; }
 
 private:
     // Private constructor
-    SharedMemoryTransport(DomainId domain_id, const std::string& participant_name,
+    SharedMemoryTransport(DomainId domain_id, std::string participant_name,
                          size_t buffer_size, size_t max_message_size);
     
     // Shared memory segment structure
@@ -136,18 +135,18 @@ private:
     };
     
     // Creates or opens a shared memory segment
-    bool CreateOrOpenSegment(const std::string& topic_name, SharedMemorySegment& segment);
+    auto CreateOrOpenSegment(const std::string& topic_name, SharedMemorySegment& segment) -> bool;
     
     // Closes a shared memory segment
-    void CloseSegment(SharedMemorySegment& segment);
+    static void CloseSegment(SharedMemorySegment& segment);
     
     // Writes a message to a ring buffer
-    bool WriteToRingBuffer(RingBuffer* buffer, const std::string& topic_name,
-                          const void* data, size_t size);
+    auto WriteToRingBuffer(RingBuffer* buffer, const std::string& topic_name,
+                          const void* data, size_t size) -> bool;
     
     // Reads a message from a ring buffer
-    bool ReadFromRingBuffer(RingBuffer* buffer, const std::string& topic_name,
-                           void* data, size_t buffer_size, size_t* bytes_read);
+    static auto ReadFromRingBuffer(RingBuffer* buffer, const std::string& topic_name,
+                           void* data, size_t buffer_size, size_t* bytes_read) -> bool;
     
     // Domain ID for this transport
     DomainId domain_id_;
@@ -174,7 +173,6 @@ private:
     static constexpr uint32_t MAGIC_NUMBER = 0x44445348;  // "SHDD" in ASCII
 };
 
-} // namespace transport
-} // namespace tiny_dds
+} // namespace tiny_dds::transport
 
 #endif // TINY_DDS_SHARED_MEMORY_TRANSPORT_H_ 

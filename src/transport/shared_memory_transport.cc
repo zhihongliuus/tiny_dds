@@ -1,33 +1,33 @@
 #include "src/transport/shared_memory_transport.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
+#include <fcntl.h>
 #include <iostream>
 #include <sstream>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
 
-namespace tiny_dds {
-namespace transport {
+namespace tiny_dds::transport {
 
-std::shared_ptr<SharedMemoryTransport> SharedMemoryTransport::Create(
+auto SharedMemoryTransport::Create(
     DomainId domain_id,
-    const std::string& participant_name,
+    std::string participant_name,
     size_t buffer_size,
-    size_t max_message_size) {
+    size_t max_message_size) -> std::shared_ptr<SharedMemoryTransport> {
     return std::shared_ptr<SharedMemoryTransport>(
-        new SharedMemoryTransport(domain_id, participant_name, buffer_size, max_message_size));
+        new SharedMemoryTransport(domain_id, std::move(participant_name), buffer_size, max_message_size));
 }
 
 SharedMemoryTransport::SharedMemoryTransport(
     DomainId domain_id,
-    const std::string& participant_name,
+    std::string participant_name,
     size_t buffer_size,
     size_t max_message_size)
     : domain_id_(domain_id),
-      participant_name_(participant_name),
+      participant_name_(std::move(participant_name)),
       buffer_size_(buffer_size),
       max_message_size_(max_message_size),
       initialized_(false) {
@@ -40,7 +40,7 @@ SharedMemoryTransport::~SharedMemoryTransport() {
     }
 }
 
-bool SharedMemoryTransport::Initialize() {
+auto SharedMemoryTransport::Initialize() -> bool {
     std::lock_guard<std::mutex> lock(mutex_);
     
     if (initialized_) {
@@ -53,7 +53,7 @@ bool SharedMemoryTransport::Initialize() {
     return true;
 }
 
-bool SharedMemoryTransport::Advertise(const std::string& topic_name) {
+auto SharedMemoryTransport::Advertise(const std::string& topic_name) -> bool {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // Check if we already have this segment
@@ -70,7 +70,7 @@ bool SharedMemoryTransport::Advertise(const std::string& topic_name) {
     }
     
     // Initialize the ring buffer
-    RingBuffer* buffer = static_cast<RingBuffer*>(segment.memory);
+    auto* buffer = static_cast<RingBuffer*>(segment.memory);
     buffer->write_index.store(0, std::memory_order_relaxed);
     buffer->read_index.store(0, std::memory_order_relaxed);
     buffer->buffer_size = static_cast<uint32_t>(buffer_size_);
@@ -82,7 +82,7 @@ bool SharedMemoryTransport::Advertise(const std::string& topic_name) {
     return true;
 }
 
-bool SharedMemoryTransport::Subscribe(const std::string& topic_name) {
+auto SharedMemoryTransport::Subscribe(const std::string& topic_name) -> bool {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // Check if we already have this segment
@@ -104,7 +104,7 @@ bool SharedMemoryTransport::Subscribe(const std::string& topic_name) {
     return true;
 }
 
-bool SharedMemoryTransport::Send(const std::string& topic_name, const void* data, size_t size) {
+auto SharedMemoryTransport::Send(const std::string& topic_name, const void* data, size_t size) -> bool {
     if (size > max_message_size_) {
         std::cerr << "Message size exceeds maximum allowed size" << std::endl;
         return false;
@@ -120,14 +120,14 @@ bool SharedMemoryTransport::Send(const std::string& topic_name, const void* data
     }
     
     // Get the ring buffer
-    RingBuffer* buffer = static_cast<RingBuffer*>(it->second.memory);
+    auto* buffer = static_cast<RingBuffer*>(it->second.memory);
     
     // Write the message to the ring buffer
     return WriteToRingBuffer(buffer, topic_name, data, size);
 }
 
-bool SharedMemoryTransport::Receive(
-    const std::string& topic_name, void* buffer, size_t buffer_size, size_t* bytes_received) {
+auto SharedMemoryTransport::Receive(
+    const std::string& topic_name, void* buffer, size_t buffer_size, size_t* bytes_received) -> bool {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // Find the segment for this topic
@@ -138,14 +138,14 @@ bool SharedMemoryTransport::Receive(
     }
     
     // Get the ring buffer
-    RingBuffer* ring_buffer = static_cast<RingBuffer*>(it->second.memory);
+    auto* ring_buffer = static_cast<RingBuffer*>(it->second.memory);
     
     // Read a message from the ring buffer
     return ReadFromRingBuffer(ring_buffer, topic_name, buffer, buffer_size, bytes_received);
 }
 
-bool SharedMemoryTransport::CreateOrOpenSegment(
-    const std::string& topic_name, SharedMemorySegment& segment) {
+auto SharedMemoryTransport::CreateOrOpenSegment(
+    const std::string& topic_name, SharedMemorySegment& segment) -> bool {
     // Generate a unique name for the shared memory segment
     std::stringstream ss;
     ss << "/tiny_dds_" << domain_id_ << "_" << topic_name;
@@ -153,7 +153,7 @@ bool SharedMemoryTransport::CreateOrOpenSegment(
     
     // Replace any invalid characters in the name
     for (char& c : shm_name) {
-        if (!isalnum(c) && c != '_' && c != '/') {
+        if (isalnum(c) == 0 && c != '_' && c != '/') {
             c = '_';
         }
     }
@@ -167,7 +167,7 @@ bool SharedMemoryTransport::CreateOrOpenSegment(
     
     // Set the size of the shared memory segment
     size_t total_size = sizeof(RingBuffer) + segment.size;
-    if (ftruncate(fd, total_size) == -1) {
+    if (ftruncate(fd, static_cast<off_t>(total_size)) == -1) {
         std::cerr << "Failed to set shared memory size: " << strerror(errno) << std::endl;
         close(fd);
         return false;
@@ -175,7 +175,7 @@ bool SharedMemoryTransport::CreateOrOpenSegment(
     
     // Map the shared memory segment
     void* memory = mmap(nullptr, total_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (memory == MAP_FAILED) {
+    if (memory == nullptr) {
         std::cerr << "Failed to map shared memory: " << strerror(errno) << std::endl;
         close(fd);
         return false;
@@ -193,7 +193,7 @@ bool SharedMemoryTransport::CreateOrOpenSegment(
 }
 
 void SharedMemoryTransport::CloseSegment(SharedMemorySegment& segment) {
-    if (segment.memory) {
+    if (segment.memory != nullptr) {
         // Unmap the shared memory
         munmap(segment.memory, segment.size);
         segment.memory = nullptr;
@@ -203,8 +203,8 @@ void SharedMemoryTransport::CloseSegment(SharedMemorySegment& segment) {
     }
 }
 
-bool SharedMemoryTransport::WriteToRingBuffer(
-    RingBuffer* buffer, const std::string& topic_name, const void* data, size_t size) {
+auto SharedMemoryTransport::WriteToRingBuffer(
+    RingBuffer* buffer, const std::string& topic_name, const void* data, size_t size) -> bool {
     // Calculate the total size needed for the message (header + data)
     size_t total_size = sizeof(MessageHeader) + size;
     if (total_size > buffer->max_message_size) {
@@ -234,27 +234,31 @@ bool SharedMemoryTransport::WriteToRingBuffer(
     }
     
     // Prepare the message header
-    MessageHeader header;
+    MessageHeader header{};
     header.magic = MAGIC_NUMBER;
     header.sequence = write_index;
     header.size = static_cast<uint32_t>(size);
-    header.checksum = 0;  // TODO: Implement checksum
+    header.checksum = 0;  // TODO(fliu): Implement checksum
     header.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     
     // Copy the topic name and sender name
-    strncpy(header.topic_name, topic_name.c_str(), sizeof(header.topic_name) - 1);
+    const char* topic_name_cstr = topic_name.c_str();
+    std::copy_n(topic_name_cstr, std::min(topic_name.length(), sizeof(header.topic_name) - 1), header.topic_name);
     header.topic_name[sizeof(header.topic_name) - 1] = '\0';
     
-    strncpy(header.sender_name, participant_name_.c_str(), sizeof(header.sender_name) - 1);
+    const char* participant_name_cstr = participant_name_.c_str();
+    std::copy_n(participant_name_cstr, std::min(participant_name_.length(), sizeof(header.sender_name) - 1), header.sender_name);
     header.sender_name[sizeof(header.sender_name) - 1] = '\0';
     
-    // Write the header to the buffer
-    char* buffer_data = buffer->data;
-    memcpy(buffer_data + position, &header, sizeof(header));
+    // Write the header and data to the buffer
+    size_t write_offset = position;
     
-    // Write the data to the buffer
-    memcpy(buffer_data + position + sizeof(header), data, size);
+    // Copy header
+    std::memcpy(&buffer->data[write_offset], &header, sizeof(header));
+    
+    // Copy data
+    std::memcpy(&buffer->data[write_offset + sizeof(header)], data, size);
     
     // Update the write index
     buffer->write_index.store(write_index + total_size, std::memory_order_release);
@@ -262,8 +266,8 @@ bool SharedMemoryTransport::WriteToRingBuffer(
     return true;
 }
 
-bool SharedMemoryTransport::ReadFromRingBuffer(
-    RingBuffer* buffer, const std::string& topic_name, void* data, size_t buffer_size, size_t* bytes_read) {
+auto SharedMemoryTransport::ReadFromRingBuffer(
+    RingBuffer* buffer, const std::string& topic_name, void* data, size_t buffer_size, size_t* bytes_read) -> bool {
     // Get the current read index
     uint32_t read_index = buffer->read_index.load(std::memory_order_relaxed);
     
@@ -278,10 +282,11 @@ bool SharedMemoryTransport::ReadFromRingBuffer(
     // Calculate the position in the buffer
     uint32_t position = read_index % buffer->buffer_size;
     
-    // Read the header
-    char* buffer_data = buffer->data;
-    MessageHeader header;
-    memcpy(&header, buffer_data + position, sizeof(header));
+    // Read the header using indexing instead of pointer arithmetic
+    size_t read_offset = position;
+    
+    MessageHeader header{};
+    std::memcpy(&header, &buffer->data[read_offset], sizeof(header));
     
     // Verify the magic number
     if (header.magic != MAGIC_NUMBER) {
@@ -292,7 +297,9 @@ bool SharedMemoryTransport::ReadFromRingBuffer(
     }
     
     // Verify the topic name
-    if (strncmp(header.topic_name, topic_name.c_str(), sizeof(header.topic_name)) != 0) {
+    // Use std::string comparison instead of strncmp to avoid array decay
+    std::string header_topic(header.topic_name, strnlen(header.topic_name, sizeof(header.topic_name)));
+    if (header_topic != topic_name) {
         // This message is for a different topic, skip it
         buffer->read_index.store(read_index + sizeof(header) + header.size, std::memory_order_release);
         return false;
@@ -304,19 +311,18 @@ bool SharedMemoryTransport::ReadFromRingBuffer(
         return false;
     }
     
-    // Read the data
-    memcpy(data, buffer_data + position + sizeof(header), header.size);
+    // Read the data using indexing instead of pointer arithmetic
+    std::memcpy(data, &buffer->data[read_offset + sizeof(header)], header.size);
     
     // Update the read index
     buffer->read_index.store(read_index + sizeof(header) + header.size, std::memory_order_release);
     
     // Set the number of bytes read
-    if (bytes_read) {
+    if (bytes_read != nullptr) {
         *bytes_read = header.size;
     }
     
     return true;
 }
 
-} // namespace transport
-} // namespace tiny_dds 
+} // namespace tiny_dds::transport 
